@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useWizard } from "../app/state.js";
+import { useWizard } from "../app/state.jsx";
 
 async function fetchJson(path) {
   const res = await fetch(path);

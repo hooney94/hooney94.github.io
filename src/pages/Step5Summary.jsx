@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useWizard } from "../app/state.js";
+import { useWizard } from "../app/state.jsx";
 import { computeQuote } from "../app/pricing.js";
 import { submitToSheet } from "../app/api.js";
 

@@ -1,5 +1,5 @@
 import React from "react";
-import { useWizard } from "../app/state.js";
+import { useWizard } from "../app/state.jsx";
 
 export default function AdminCosts() {
   const { state, dispatch } = useWizard();

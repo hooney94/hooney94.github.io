@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { useWizard } from "../app/state.js";
+import { useWizard } from "../app/state.jsx";
 
 export default function Step4Switch() {
   const nav = useNavigate();
