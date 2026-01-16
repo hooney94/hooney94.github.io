@@ -1,14 +1,300 @@
 <!doctype html>
-<html lang="en">
-  <head>
-    <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>hooney94.github.io</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>조명 견적 - 고객 정보</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; }
+    .wrap { max-width: 720px; margin: 0 auto; }
+    label { display:block; margin-top: 14px; font-weight: 600; }
+    input { width: 100%; padding: 10px; margin-top: 6px; box-sizing: border-box; }
+    .row { display:flex; gap: 10px; }
+    .row > div { flex:1; }
+    button { padding: 10px 14px; margin-top: 12px; cursor: pointer; }
+    .muted { color:#666; font-size: 13px; }
+    .ok { color: #0a7; font-weight: 700; }
+    .err { color: #c33; font-weight: 700; }
+    fieldset { border: 1px solid #ddd; padding: 14px; margin-top: 14px; }
+    legend { font-weight: 700; }
+    .actions { display:flex; gap: 10px; margin-top: 14px; }
+    .actions button { flex:1; }
+    .disabled { opacity: .5; pointer-events: none; }
+  </style>
+
+  <!-- Kakao(daum) postcode -->
+  <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+
+  <!-- Firebase (compat 버전 예시) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+</head>
+<body>
+  <div class="wrap">
+    <h1>고객/현장 정보</h1>
+    <p class="muted">주소 검색 + 전화번호 인증 후 다음 단계로 이동합니다.</p>
+
+    <label>이름</label>
+    <input id="name" placeholder="홍길동" />
+
+    <fieldset>
+      <legend>전화번호 인증</legend>
+
+      <label>휴대폰 번호</label>
+      <input id="phone" placeholder="01012345678 또는 010-1234-5678" />
+
+      <div id="recaptcha-container" style="margin-top:10px;"></div>
+
+      <div class="actions">
+        <button id="btnSend">인증번호 받기</button>
+        <button id="btnVerify" class="disabled">인증 확인</button>
+      </div>
+
+      <label>인증번호(OTP)</label>
+      <input id="otp" placeholder="문자로 받은 숫자 입력" />
+
+      <div id="phoneStatus" class="muted" style="margin-top:8px;"></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>주소</legend>
+
+      <div class="row">
+        <div>
+          <label>우편번호</label>
+          <input id="zonecode" readonly />
+        </div>
+        <div style="display:flex; align-items:end;">
+          <button id="btnAddr" style="width:100%;">주소 검색</button>
+        </div>
+      </div>
+
+      <label>주소(도로명/지번)</label>
+      <input id="addr1" readonly />
+
+      <label>상세주소</label>
+      <input id="addr2" placeholder="동/호수, 층 등" />
+    </fieldset>
+
+    <label style="margin-top:16px;">
+      <input type="checkbox" id="consent" />
+      개인정보 수집 및 이용에 동의합니다.
+    </label>
+
+    <div class="actions">
+      <button id="btnNext" class="disabled">다음으로</button>
+    </div>
+
+    <!-- Google Form 제출용 hidden form -->
+    <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
+    <form id="gform" method="POST" target="hidden_iframe" style="display:none;">
+      <!-- 아래 name="entry.xxxxx" 를 본인 폼의 entry로 교체 -->
+      <input name="entry.1111111111" id="f_name" />
+      <input name="entry.2222222222" id="f_phone" />
+      <input name="entry.3333333333" id="f_zonecode" />
+      <input name="entry.4444444444" id="f_addr1" />
+      <input name="entry.5555555555" id="f_addr2" />
+    </form>
+  </div>
+
+  <script>
+    /***********************
+     * 1) Firebase 초기화
+     ***********************/
+    const firebaseConfig = {
+      apiKey: "AIzaSyAc3BATBFJdQo0OSxWD2RLmnOVsAkOA160",
+      authDomain: "zibis-app.firebaseapp.com",
+      projectId: "zibis-app",
+      storageBucket: "zibis-app.firebasestorage.app",
+      messagingSenderId: "696225041048",
+      appId: "1:696225041048:web:eea4fc67b3ce5900d29eed",
+      measurementId: "G-VLRNQWVLLQ"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    /***********************
+     * 2) 상태 변수
+     ***********************/
+    let confirmationResult = null;
+    let phoneVerified = false;
+
+    const els = {
+      name: document.getElementById('name'),
+      phone: document.getElementById('phone'),
+      otp: document.getElementById('otp'),
+      btnSend: document.getElementById('btnSend'),
+      btnVerify: document.getElementById('btnVerify'),
+      phoneStatus: document.getElementById('phoneStatus'),
+      zonecode: document.getElementById('zonecode'),
+      addr1: document.getElementById('addr1'),
+      addr2: document.getElementById('addr2'),
+      btnAddr: document.getElementById('btnAddr'),
+      consent: document.getElementById('consent'),
+      btnNext: document.getElementById('btnNext'),
+      gform: document.getElementById('gform'),
+      f_name: document.getElementById('f_name'),
+      f_phone: document.getElementById('f_phone'),
+      f_zonecode: document.getElementById('f_zonecode'),
+      f_addr1: document.getElementById('f_addr1'),
+      f_addr2: document.getElementById('f_addr2'),
+      hidden_iframe: document.getElementById('hidden_iframe'),
+    };
+
+    function setStatus(msg, type='muted') {
+      els.phoneStatus.className = type;
+      els.phoneStatus.textContent = msg;
+    }
+
+    function normalizeKRPhone(input) {
+      const raw = String(input || '').replace(/[^0-9]/g, '');
+      // 010xxxxxxxx -> +8210xxxxxxxx (앞의 0 제거)
+      if (raw.startsWith('010') && raw.length === 11) return '+82' + raw.substring(1);
+      if (raw.startsWith('011') && raw.length === 11) return '+82' + raw.substring(1);
+      if (raw.startsWith('016') && raw.length === 11) return '+82' + raw.substring(1);
+      if (raw.startsWith('017') && raw.length === 11) return '+82' + raw.substring(1);
+      if (raw.startsWith('018') && raw.length === 11) return '+82' + raw.substring(1);
+      if (raw.startsWith('019') && raw.length === 11) return '+82' + raw.substring(1);
+      // 이미 +82 형태면 그대로
+      if (String(input).trim().startsWith('+')) return String(input).trim();
+      return null;
+    }
+
+    /***********************
+     * 3) reCAPTCHA 설정 (Firebase Phone Auth)
+     ***********************/
+    window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+      'size': 'invisible'
+    });
+
+    async function sendOTP() {
+      const phoneE164 = normalizeKRPhone(els.phone.value);
+      if (!phoneE164) {
+        setStatus('휴대폰 번호 형식이 올바르지 않습니다. 예: 010-1234-5678', 'err');
+        return;
+      }
+      setStatus('인증번호 전송 중...', 'muted');
+
+      try {
+        confirmationResult = await auth.signInWithPhoneNumber(phoneE164, window.recaptchaVerifier);
+        els.btnVerify.classList.remove('disabled');
+        setStatus('인증번호를 전송했습니다. 문자를 확인하세요.', 'ok');
+      } catch (e) {
+        console.error(e);
+        setStatus('인증번호 전송 실패: ' + (e.message || e), 'err');
+      }
+    }
+
+    async function verifyOTP() {
+      if (!confirmationResult) {
+        setStatus('먼저 인증번호 받기를 진행하세요.', 'err');
+        return;
+      }
+      const code = String(els.otp.value || '').trim();
+      if (code.length < 4) {
+        setStatus('인증번호를 입력하세요.', 'err');
+        return;
+      }
+      setStatus('인증 확인 중...', 'muted');
+
+      try {
+        await confirmationResult.confirm(code);
+        phoneVerified = true;
+        setStatus('전화번호 인증 완료', 'ok');
+        maybeEnableNext();
+      } catch (e) {
+        console.error(e);
+        setStatus('인증번호가 올바르지 않습니다.', 'err');
+      }
+    }
+
+    /***********************
+     * 4) 주소 검색 (Kakao postcode)
+     ***********************/
+    function execDaumPostcode() {
+      new daum.Postcode({
+        oncomplete: function(data) {
+          // data.zonecode, data.roadAddress, data.jibunAddress, data.address 등
+          els.zonecode.value = data.zonecode || '';
+          els.addr1.value = data.roadAddress || data.jibunAddress || data.address || '';
+          els.addr2.focus();
+          maybeEnableNext();
+        }
+      }).open();
+    }
+
+    /***********************
+     * 5) Google Form으로 제출 -> Sheet 저장
+     ***********************/
+    function submitToGoogleSheetViaForm(payload) {
+      // TODO: 본인 Google Form의 formResponse URL로 교체
+      // 예: https://docs.google.com/forms/d/e/FORM_ID/formResponse
+      const FORM_ACTION_URL = 'https://docs.google.com/forms/d/e/FORM_ID/formResponse';
+      els.gform.action = FORM_ACTION_URL;
+
+      // TODO: entry id 매핑 (form 질문별 entry.번호)
+      els.f_name.value = payload.name;
+      els.f_phone.value = payload.phone;
+      els.f_zonecode.value = payload.zonecode;
+      els.f_addr1.value = payload.addr1;
+      els.f_addr2.value = payload.addr2;
+
+      return new Promise((resolve) => {
+        // iframe load를 이용해 "전송 시도" 시점에 resolve
+        const handler = () => {
+          els.hidden_iframe.removeEventListener('load', handler);
+          resolve();
+        };
+        els.hidden_iframe.addEventListener('load', handler);
+        els.gform.submit();
+      });
+    }
+
+    /***********************
+     * 6) 다음 버튼 활성화 조건
+     ***********************/
+    function maybeEnableNext() {
+      const ok =
+        phoneVerified &&
+        els.consent.checked &&
+        String(els.name.value || '').trim().length >= 2 &&
+        String(els.zonecode.value || '').trim().length > 0 &&
+        String(els.addr1.value || '').trim().length > 0;
+
+      if (ok) els.btnNext.classList.remove('disabled');
+      else els.btnNext.classList.add('disabled');
+    }
+
+    /***********************
+     * 이벤트 바인딩
+     ***********************/
+    els.btnSend.addEventListener('click', sendOTP);
+    els.btnVerify.addEventListener('click', verifyOTP);
+    els.btnAddr.addEventListener('click', execDaumPostcode);
+    els.consent.addEventListener('change', maybeEnableNext);
+    els.name.addEventListener('input', maybeEnableNext);
+    els.addr2.addEventListener('input', maybeEnableNext);
+
+    els.btnNext.addEventListener('click', async () => {
+      if (els.btnNext.classList.contains('disabled')) return;
+
+      const payload = {
+        name: String(els.name.value || '').trim(),
+        phone: String(els.phone.value || '').trim(),
+        zonecode: String(els.zonecode.value || '').trim(),
+        addr1: String(els.addr1.value || '').trim(),
+        addr2: String(els.addr2.value || '').trim(),
+      };
+
+      // 다음 페이지에서 사용할 수 있도록 저장(선택)
+      localStorage.setItem('customerInfo', JSON.stringify(payload));
+
+      // 1) Google Sheet 저장(구글폼 제출)
+      await submitToGoogleSheetViaForm(payload);
+
+      // 2) 다음 페이지 이동
+      window.location.href = 'next.html';
+    });
+  </script>
+</body>
 </html>

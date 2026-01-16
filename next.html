@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>조명 견적 - 다음 단계</title>
+</head>
+<body style="font-family:system-ui; margin:24px;">
+  <h1>다음 단계(견적 구성)</h1>
+  <pre id="out" style="background:#f6f6f6; padding:12px;"></pre>
+
+  <script>
+    const data = localStorage.getItem('customerInfo');
+    document.getElementById('out').textContent = data ? data : '(저장된 고객정보 없음)';
+  </script>
+</body>
+</html>
