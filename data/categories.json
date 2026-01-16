@@ -1,0 +1,7 @@
+[
+  { "id": "h_down", "brandId": "hanssem", "name": "매립등", "sortOrder": 1 },
+  { "id": "h_main", "brandId": "hanssem", "name": "메인등", "sortOrder": 2 },
+  { "id": "h_line", "brandId": "hanssem", "name": "라인등", "sortOrder": 3 },
+  { "id": "g_mag", "brandId": "gbis", "name": "마그네틱등", "sortOrder": 1 },
+  { "id": "g_etc", "brandId": "gbis", "name": "기타", "sortOrder": 2 }
+]

@@ -1,0 +1,32 @@
+[
+  {
+    "id": "H-ML-001",
+    "brandId": "hanssem",
+    "categoryId": "h_main",
+    "name": "한샘 메인등 60W",
+    "dealerPrice": 80000,
+    "retailPrice": 120000,
+    "imageUrl": "https://via.placeholder.com/240x160?text=H-ML-001",
+    "isActive": true
+  },
+  {
+    "id": "H-DL-010",
+    "brandId": "hanssem",
+    "categoryId": "h_down",
+    "name": "한샘 매립등 10W",
+    "dealerPrice": 7000,
+    "retailPrice": 12000,
+    "imageUrl": "https://via.placeholder.com/240x160?text=H-DL-010",
+    "isActive": true
+  },
+  {
+    "id": "G-MG-100",
+    "brandId": "gbis",
+    "categoryId": "g_mag",
+    "name": "지비스 마그네틱 레일 1m",
+    "dealerPrice": 25000,
+    "retailPrice": 40000,
+    "imageUrl": "https://via.placeholder.com/240x160?text=G-MG-100",
+    "isActive": true
+  }
+]
