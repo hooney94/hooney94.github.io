@@ -1,49 +1,14 @@
 <!doctype html>
-<html lang="ko">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Selection Collector Test</title>
-  <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; max-width: 720px; }
-    .card { border: 1px solid #ddd; border-radius: 12px; padding: 16px; }
-    .row { margin: 10px 0; }
-    button { padding: 10px 14px; border-radius: 10px; border: 1px solid #111; background: #111; color: #fff; cursor: pointer; }
-    button:disabled { opacity: .5; cursor: not-allowed; }
-    code { background: #f6f6f6; padding: 2px 6px; border-radius: 6px; }
-    .status { margin-top: 12px; padding: 10px; border-radius: 10px; background: #f6f6f6; }
-    .muted { color: #666; font-size: 14px; }
-  </style>
-</head>
-<body>
-  <h1>Selection Collector Test</h1>
-  <p class="muted">
-    사용자가 체크한 항목을 Apps Script 웹앱으로 전송하여 Google Sheet에 저장합니다.
-  </p>
-
-  <div class="card">
-    <div class="row">
-      <strong>선택 항목</strong>
-    </div>
-    <div class="row">
-      <label><input type="checkbox" name="opt" value="Option-A" /> Option-A</label><br />
-      <label><input type="checkbox" name="opt" value="Option-B" /> Option-B</label><br />
-      <label><input type="checkbox" name="opt" value="Option-C" /> Option-C</label>
-    </div>
-
-    <div class="row">
-      <button id="submitBtn">전송(자동 수집)</button>
-    </div>
-
-    <div class="status" id="statusBox">
-      상태: 대기 중
-    </div>
-
-    <p class="muted">
-      session_id는 브라우저 로컬에 저장된 랜덤 값입니다. 개인정보를 수집한다면 별도 고지/동의가 필요합니다.
-    </p>
-  </div>
-
-  <script src="./script.js"></script>
-</body>
+<html lang="en">
+  <head>
+    <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>hooney94.github.io</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
 </html>
